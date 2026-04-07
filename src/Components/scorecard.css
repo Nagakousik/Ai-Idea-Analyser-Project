@@ -1,0 +1,150 @@
+.scorecard-container {
+  background: white;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.scorecard-row {
+  margin-bottom: 1rem;
+}
+
+.scorecard-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.scorecard-value-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.scorecard-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.scorecard-value.score-low { color: #e74c3c; }
+.scorecard-value.score-medium { color: #f39c12; }
+.scorecard-value.score-high { color: #27ae60; }
+
+.score-delta {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 1rem;
+}
+
+.score-delta.positive {
+  background: #d5f5e3;
+  color: #27ae60;
+}
+
+.score-delta.negative {
+  background: #fee2e2;
+  color: #e74c3c;
+}
+
+.score-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.score-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.score-progress-fill.score-low { background: #e74c3c; }
+.score-progress-fill.score-medium { background: #f39c12; }
+.score-progress-fill.score-high { background: #27ae60; }
+
+.scorecard-final {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px dashed #e2e8f0;
+  text-align: center;
+}
+
+.scorecard-final-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scorecard-final-value {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.scorecard-final-value.score-low { color: #e74c3c; }
+.scorecard-final-value.score-medium { color: #f39c12; }
+.scorecard-final-value.score-high { color: #27ae60; }
+
+/* Tooltip Styles */
+.tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  background: #e2e8f0;
+  border-radius: 50%;
+  cursor: help;
+  position: relative;
+}
+
+.tooltip-icon:hover {
+  background: #cbd5e1;
+  color: #475569;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  width: 220px;
+  background-color: #1e293b;
+  color: white;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: normal;
+  position: absolute;
+  z-index: 100;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.4;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.tooltip-text::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1e293b transparent transparent transparent;
+}
+
+.tooltip-icon:hover .tooltip-text {
+  visibility: visible;
+}

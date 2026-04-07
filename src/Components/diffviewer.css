@@ -1,0 +1,92 @@
+.diff-container {
+  background: #f8fafc;
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.diff-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.diff-badge {
+  font-size: 0.7rem;
+  background: #3b82f6;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+}
+
+.diff-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.diff-section {
+  background: white;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+}
+
+.original-section {
+  border-left: 3px solid #f39c12;
+}
+
+.rewritten-section {
+  border-left: 3px solid #27ae60;
+}
+
+.diff-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.diff-text {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #1e293b;
+}
+
+.diff-arrow {
+  text-align: center;
+  font-size: 1.25rem;
+  color: #94a3b8;
+}
+
+.diff-removed-tag {
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  color: #e74c3c;
+  background: #fee2e2;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  display: inline-block;
+}
+
+.diff-added-tag {
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  color: #27ae60;
+  background: #d5f5e3;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  display: inline-block;
+}
+
+.diff-highlight-added {
+  background: #d5f5e3;
+  color: #27ae60;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
