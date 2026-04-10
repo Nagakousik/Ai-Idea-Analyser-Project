@@ -2,6 +2,8 @@
   background: white;
   border-radius: 1rem;
   padding: 1rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px -18px rgba(15, 23, 42, 0.18);
 }
 
 .scorecard-row {
@@ -15,6 +17,12 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  line-height: 1.35;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .scorecard-value-wrapper {
@@ -22,11 +30,13 @@
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.25rem;
+  flex-wrap: wrap;
 }
 
 .scorecard-value {
   font-size: 1.25rem;
   font-weight: 700;
+  line-height: 1.1;
 }
 
 .scorecard-value.score-low { color: #e74c3c; }
@@ -106,6 +116,7 @@
   border-radius: 50%;
   cursor: help;
   position: relative;
+  flex-shrink: 0;
 }
 
 .tooltip-icon:hover {
@@ -132,6 +143,7 @@
   word-wrap: break-word;
   line-height: 1.4;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  overflow-wrap: anywhere;
 }
 
 .tooltip-text::after {
@@ -147,4 +159,18 @@
 
 .tooltip-icon:hover .tooltip-text {
   visibility: visible;
+}
+
+@media (max-width: 480px) {
+  .scorecard-container {
+    padding: 0.85rem;
+  }
+
+  .scorecard-value {
+    font-size: 1.05rem;
+  }
+
+  .scorecard-final-value {
+    font-size: 1.6rem;
+  }
 }

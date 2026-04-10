@@ -22,6 +22,11 @@ const IdeaForge = ({ onComplete, initialData }) => {
   const [designPrompt, setDesignPrompt] = useState('');
   const [designPromptLoading, setDesignPromptLoading] = useState(false);
   const [designPromptCopied, setDesignPromptCopied] = useState(false);
+  const [lastDownloadedFile, setLastDownloadedFile] = useState('');
+  const [blueprintQuery, setBlueprintQuery] = useState('');
+  const [expandedScreens, setExpandedScreens] = useState(() => new Set());
+  const [blueprintJsonCopied, setBlueprintJsonCopied] = useState(false);
+  const [blueprintJsonDownloaded, setBlueprintJsonDownloaded] = useState(false);
 
   // Restore previous session when coming back from Result
   useEffect(() => {
@@ -178,6 +183,86 @@ const IdeaForge = ({ onComplete, initialData }) => {
     }
   };
 
+  const getBlueprintJsonText = () => {
+    if (!blueprint) return '';
+    try {
+      return JSON.stringify(blueprint, null, 2);
+    } catch {
+      return '';
+    }
+  };
+
+  const handleCopyBlueprintJson = async () => {
+    const text = getBlueprintJsonText();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setBlueprintJsonCopied(true);
+      setTimeout(() => setBlueprintJsonCopied(false), 1800);
+    } catch (e) {
+      setError('Copy failed. Please copy manually.');
+    }
+  };
+
+  const handleDownloadBlueprintJson = () => {
+    const text = getBlueprintJsonText();
+    if (!text) return;
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeName = (blueprint?.productName || 'ui-blueprint')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 6)
+      .join('-') || 'ui-blueprint';
+    a.href = url;
+    a.download = `${safeName}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setBlueprintJsonDownloaded(true);
+    setTimeout(() => setBlueprintJsonDownloaded(false), 2000);
+  };
+
+  const toggleScreenExpanded = (idx) => {
+    setExpandedScreens((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  const expandAllScreens = () => {
+    if (!Array.isArray(blueprint?.screens)) return;
+    setExpandedScreens(new Set(blueprint.screens.map((_, idx) => idx)));
+  };
+
+  const collapseAllScreens = () => {
+    setExpandedScreens(new Set());
+  };
+
+  const copyScreenSpec = async (screen, idx) => {
+    if (!screen) return;
+    const lines = [
+      `Screen ${idx + 1}: ${screen.name}`,
+      `Purpose: ${screen.purpose}`,
+      `Primary CTA: ${screen.primaryCTA}`,
+      `Layout Top: ${(screen.layout?.top || []).join(' | ')}`,
+      `Layout Middle: ${(screen.layout?.middle || []).join(' | ')}`,
+      `Layout Bottom: ${(screen.layout?.bottom || []).join(' | ')}`,
+      `Microcopy: "${screen.microcopy?.headline}" — ${screen.microcopy?.helperText}`
+    ].filter(Boolean);
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+    } catch (e) {
+      setError('Copy failed. Please copy manually.');
+    }
+  };
+
   const handleContinue = () => {
     onComplete({
       originalIdea: idea,
@@ -193,6 +278,16 @@ const IdeaForge = ({ onComplete, initialData }) => {
     if (!element) return;
     
     try {
+      const suggestedBaseName = (idea || 'idea')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .split(/\s+/)
+        .slice(0, 6)
+        .join('-') || 'idea';
+      const fileName = `ideaforge-${suggestedBaseName}.pdf`;
+      const generatedOn = new Date().toLocaleDateString();
+
       const canvas = await html2canvas(element, {
         scale: 2,
         backgroundColor: '#ffffff',
@@ -207,8 +302,33 @@ const IdeaForge = ({ onComplete, initialData }) => {
       });
       const imgWidth = 280;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 15, 15, imgWidth, imgHeight);
-      pdf.save('ideaforge-comparison.pdf');
+      const pdfWidth = 297;
+      const pdfHeight = 210;
+
+      // Top metadata strip
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      pdf.text('IdeaForge Comparison Report', 15, 10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      pdf.text(`Suggested file: ${fileName}`, 15, 15);
+      pdf.text(`Generated on: ${generatedOn}`, 230, 15);
+
+      pdf.addImage(imgData, 'PNG', 8.5, 20, imgWidth, imgHeight);
+
+      // Footer one-liner
+      pdf.setDrawColor(220, 226, 232);
+      pdf.line(10, pdfHeight - 11, pdfWidth - 10, pdfHeight - 11);
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(
+        'Strong ideas are refined in the real world - validate with users, iterate fast, and keep shipping.',
+        15,
+        pdfHeight - 6
+      );
+
+      pdf.save(fileName);
+      setLastDownloadedFile(fileName);
     } catch (error) {
       console.error('PDF generation failed:', error);
       setError('Failed to generate PDF. Please try again.');
@@ -463,6 +583,12 @@ const IdeaForge = ({ onComplete, initialData }) => {
               </div>
             )}
 
+            {rewrittenIdea && lastDownloadedFile && (
+              <p className="download-note">
+                Downloaded as <strong>{lastDownloadedFile}</strong>
+              </p>
+            )}
+
             {rewrittenIdea && (
               <div className="ideafoge-next-steps">
                 <h3 className="next-steps-title">What to do with this idea now</h3>
@@ -523,6 +649,43 @@ const IdeaForge = ({ onComplete, initialData }) => {
 
                 {blueprint && (
                   <div className="blueprint-content">
+                    <div className="blueprint-toolbar">
+                      <div className="blueprint-search">
+                        <span className="blueprint-search-icon" aria-hidden="true">⌕</span>
+                        <input
+                          className="blueprint-search-input"
+                          type="text"
+                          value={blueprintQuery}
+                          onChange={(e) => setBlueprintQuery(e.target.value)}
+                          placeholder="Search screens (e.g., onboarding, dashboard, settings)…"
+                        />
+                      </div>
+                      <div className="blueprint-toolbar-actions">
+                        <button
+                          type="button"
+                          className="chip-action"
+                          onClick={handleCopyBlueprintJson}
+                          disabled={!blueprint}
+                        >
+                          {blueprintJsonCopied ? 'Copied JSON ✓' : 'Copy JSON'}
+                        </button>
+                        <button
+                          type="button"
+                          className="chip-action"
+                          onClick={handleDownloadBlueprintJson}
+                          disabled={!blueprint}
+                        >
+                          {blueprintJsonDownloaded ? 'Downloaded ✓' : 'Download JSON'}
+                        </button>
+                        <button type="button" className="chip-action" onClick={expandAllScreens} disabled={!blueprint}>
+                          Expand all
+                        </button>
+                        <button type="button" className="chip-action" onClick={collapseAllScreens} disabled={!blueprint}>
+                          Collapse all
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="blueprint-top">
                       <div className="blueprint-kpi">
                         <div className="kpi-label">Product</div>
@@ -536,55 +699,98 @@ const IdeaForge = ({ onComplete, initialData }) => {
 
                     <div className="blueprint-grid">
                       {Array.isArray(blueprint.screens) &&
-                        blueprint.screens.map((screen, idx) => (
-                          <div key={`${screen.name}-${idx}`} className="blueprint-screen">
-                            <div className="blueprint-screen-header">
-                              <div className="screen-index">{idx + 1}</div>
-                              <div className="screen-name">{screen.name}</div>
-                            </div>
-                            <div className="screen-purpose">{screen.purpose}</div>
+                        blueprint.screens
+                          .filter((screen) => {
+                            if (!blueprintQuery.trim()) return true;
+                            const q = blueprintQuery.toLowerCase();
+                            const hay = `${screen?.name || ''} ${screen?.purpose || ''} ${screen?.primaryCTA || ''}`.toLowerCase();
+                            return hay.includes(q);
+                          })
+                          .map((screen, idx) => {
+                            const isExpanded = expandedScreens.has(idx);
+                            return (
+                              <div
+                                key={`${screen.name}-${idx}`}
+                                className={`blueprint-screen ${isExpanded ? 'blueprint-screen--expanded' : ''}`}
+                              >
+                                <div className="blueprint-screen-header">
+                                  <button
+                                    type="button"
+                                    className="screen-toggle"
+                                    onClick={() => toggleScreenExpanded(idx)}
+                                    aria-expanded={isExpanded}
+                                  >
+                                    <span className="screen-index">{idx + 1}</span>
+                                    <span className="screen-name">{screen.name}</span>
+                                  </button>
+                                  <div className="screen-actions">
+                                    <button
+                                      type="button"
+                                      className="mini-btn"
+                                      onClick={() => copyScreenSpec(screen, idx)}
+                                      title="Copy this screen spec"
+                                    >
+                                      Copy
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="mini-btn"
+                                      onClick={() => toggleScreenExpanded(idx)}
+                                      title={isExpanded ? 'Collapse' : 'Expand'}
+                                    >
+                                      {isExpanded ? 'Less' : 'More'}
+                                    </button>
+                                  </div>
+                                </div>
 
-                            <div className="screen-layout">
-                              <div className="layout-col">
-                                <div className="layout-title">Top</div>
-                                <ul>
-                                  {(screen.layout?.top || []).map((t, i) => (
-                                    <li key={`t-${i}`}>{t}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                              <div className="layout-col">
-                                <div className="layout-title">Middle</div>
-                                <ul>
-                                  {(screen.layout?.middle || []).map((t, i) => (
-                                    <li key={`m-${i}`}>{t}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                              <div className="layout-col">
-                                <div className="layout-title">Bottom</div>
-                                <ul>
-                                  {(screen.layout?.bottom || []).map((t, i) => (
-                                    <li key={`b-${i}`}>{t}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </div>
+                                <div className="screen-purpose">{screen.purpose}</div>
 
-                            <div className="screen-meta">
-                              <div className="meta-row">
-                                <span className="meta-label">Primary CTA</span>
-                                <span className="meta-value">{screen.primaryCTA}</span>
+                                {isExpanded && (
+                                  <>
+                                    <div className="screen-layout">
+                                      <div className="layout-col">
+                                        <div className="layout-title">Top</div>
+                                        <ul>
+                                          {(screen.layout?.top || []).map((t, i) => (
+                                            <li key={`t-${i}`}>{t}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                      <div className="layout-col">
+                                        <div className="layout-title">Middle</div>
+                                        <ul>
+                                          {(screen.layout?.middle || []).map((t, i) => (
+                                            <li key={`m-${i}`}>{t}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                      <div className="layout-col">
+                                        <div className="layout-title">Bottom</div>
+                                        <ul>
+                                          {(screen.layout?.bottom || []).map((t, i) => (
+                                            <li key={`b-${i}`}>{t}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    </div>
+
+                                    <div className="screen-meta">
+                                      <div className="meta-row">
+                                        <span className="meta-label">Primary CTA</span>
+                                        <span className="meta-value">{screen.primaryCTA}</span>
+                                      </div>
+                                      <div className="meta-row">
+                                        <span className="meta-label">Microcopy</span>
+                                        <span className="meta-value">
+                                          “{screen.microcopy?.headline}” — {screen.microcopy?.helperText}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
                               </div>
-                              <div className="meta-row">
-                                <span className="meta-label">Microcopy</span>
-                                <span className="meta-value">
-                                  “{screen.microcopy?.headline}” — {screen.microcopy?.helperText}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                            );
+                          })}
                     </div>
 
                     {blueprint.designSystem && (

@@ -10,6 +10,25 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const TIMEOUT_MS = 15000; // 15 seconds
 const MAX_RETRIES = 2;
 
+const buildVariationTag = () => {
+  try {
+    const bytes = new Uint8Array(6);
+    crypto.getRandomValues(bytes);
+    const token = Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+    return `v-${Date.now()}-${token}`;
+  } catch {
+    return `v-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+};
+
+const withVariationTag = (prompt) => `${prompt}
+
+Variation tag: ${buildVariationTag()}
+(Use this only to avoid repetitive phrasing. Do not mention it in the output.)
+`;
+
 // Helper: Fetch with timeout
 const fetchWithTimeout = async (url, options, timeout = TIMEOUT_MS) => {
   const controller = new AbortController();
@@ -133,8 +152,11 @@ export const rewriteIdea = async (idea, scores, finalScore) => {
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: REWRITE_PROMPT(idea, scores, finalScore) }],
-        temperature: 0.7
+        messages: [{ role: 'user', content: withVariationTag(REWRITE_PROMPT(idea, scores, finalScore)) }],
+        temperature: 0.7,
+        top_p: 0.95,
+        presence_penalty: 0.5,
+        frequency_penalty: 0.25
       })
     });
 
@@ -174,8 +196,11 @@ export const generateUiBlueprint = async ({ idea, rewrittenIdea }) => {
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: UI_BLUEPRINT_PROMPT({ idea, rewrittenIdea }) }],
+        messages: [{ role: 'user', content: withVariationTag(UI_BLUEPRINT_PROMPT({ idea, rewrittenIdea })) }],
         temperature: 0.4,
+        top_p: 0.9,
+        presence_penalty: 0.35,
+        frequency_penalty: 0.2,
         response_format: { type: 'json_object' }
       })
     });
@@ -215,8 +240,11 @@ export const generateDesignPrompt = async ({ idea, rewrittenIdea, blueprint }) =
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: DESIGN_PROMPT_PROMPT({ idea, rewrittenIdea, blueprint }) }],
-        temperature: 0.35
+        messages: [{ role: 'user', content: withVariationTag(DESIGN_PROMPT_PROMPT({ idea, rewrittenIdea, blueprint })) }],
+        temperature: 0.35,
+        top_p: 0.9,
+        presence_penalty: 0.25,
+        frequency_penalty: 0.25
       })
     });
 
